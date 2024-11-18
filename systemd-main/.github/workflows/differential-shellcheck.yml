@@ -1,0 +1,40 @@
+---
+# https://github.com/redhat-plumbers-in-action/differential-shellcheck#readme
+
+name: Differential ShellCheck
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    if: github.event.repository.name != 'systemd-security'
+    runs-on: ubuntu-24.04
+
+    permissions:
+      security-events: write
+
+    steps:
+      - name: Repository checkout
+        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938
+        with:
+          fetch-depth: 0
+
+      - name: Differential ShellCheck
+        uses: redhat-plumbers-in-action/differential-shellcheck@cc6721c45a8800cc666de45493545a07a638d121
+        with:
+          # exclude all `.in` files because they may contain unsupported syntax, and they have to be preprocessed first
+          # TEMPORARY: exclude bash completion files, they would generate too many defects in Code scanning dashboard (600+)
+          # exclude zsh completion files, zsh is not supported by ShellCheck
+          exclude-path: |
+            '**/*.in'
+            'shell-completion/bash/*'
+            'shell-completion/zsh/*'
+          token: ${{ secrets.GITHUB_TOKEN }}
